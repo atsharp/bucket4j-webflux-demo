@@ -2,21 +2,29 @@ package com.bucket4j.demo;
 
 import com.giffing.bucket4j.spring.boot.starter.config.Bucket4JBaseConfiguration;
 import com.giffing.bucket4j.spring.boot.starter.config.cache.AsyncCacheResolver;
+import com.giffing.bucket4j.spring.boot.starter.config.webflux.Bucket4JAutoConfigurationWebfluxFilter;
+import com.giffing.bucket4j.spring.boot.starter.context.ConsumptionProbeHolder;
+import com.giffing.bucket4j.spring.boot.starter.context.RateLimitCheck;
+import com.giffing.bucket4j.spring.boot.starter.context.RateLimitConditionMatchingStrategy;
 import com.giffing.bucket4j.spring.boot.starter.context.metrics.MetricHandler;
 import com.giffing.bucket4j.spring.boot.starter.context.properties.Bucket4JBootProperties;
-import com.giffing.bucket4j.spring.boot.starter.filter.reactive.ReactiveRateLimitException;
+import com.giffing.bucket4j.spring.boot.starter.context.properties.Bucket4JConfiguration;
+import com.giffing.bucket4j.spring.boot.starter.context.properties.FilterConfiguration;
 import com.giffing.bucket4j.spring.boot.starter.filter.reactive.webflux.WebfluxWebFilter;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.BucketConfiguration;
 import io.github.bucket4j.grid.ProxyManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -62,16 +70,11 @@ class DemoApplicationTests {
 	@Configuration
 	@EnableAutoConfiguration
 	@EnableConfigurationProperties(Bucket4JBootProperties.class)
-	static class Config extends Bucket4JBaseConfiguration {
+	static class Config  {
 
 		@Bean
 		public AsyncCacheResolver asyncCacheResolver() {
 			return mock(AsyncCacheResolver.class);
-		}
-
-		@Override
-		public List<MetricHandler> getMetricHandlers() {
-			return Collections.emptyList();
 		}
 
 		@RestController
@@ -87,15 +90,25 @@ class DemoApplicationTests {
 
 		// uncomment this out and it works as expected
 		/*@Bean
-		public WebfluxWebFilter manual() {
-			return new WebfluxWebFilter(null) {
+		public WebfluxWebFilter manual(Bucket4JBootProperties properties, AsyncCacheResolver asyncCacheResolver) {
+			final Bucket4JConfiguration conf = properties.getFilters().get(0);
+			FilterConfiguration filterConfig = new FilterConfiguration<>();
+			filterConfig.setUrl(conf.getUrl());
+			filterConfig.setOrder(conf.getFilterOrder());
+			filterConfig.setStrategy(conf.getStrategy());
+			filterConfig.setHttpResponseBody(conf.getHttpResponseBody());
+			filterConfig.setHttpResponseHeaders(conf.getHttpResponseHeaders());
+			filterConfig.setMetrics(conf.getMetrics());
+			filterConfig.getRateLimitChecks().add(new RateLimitCheck() {
 
 				@Override
-				public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-					return Mono.error(new ReactiveRateLimitException("{}"));
+				public ConsumptionProbeHolder rateLimit(Object request, boolean async) {
+					// hard-coding this to make demo easier
+					return new ConsumptionProbeHolder(asyncCacheResolver.resolve("buckets").getProxy("/test-rate-limit").get().tryConsumeAndReturnRemaining(1));
 				}
 
-			};
+			});
+			return new WebfluxWebFilter(filterConfig);
 		}*/
 
 	}
