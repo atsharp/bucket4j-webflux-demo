@@ -1,0 +1,12 @@
+bucket4j:
+  enabled: true
+  filters:
+    - cache-name: buckets
+      url: .*
+      filter-method: webflux
+      rate-limits:
+        - bandwidths:
+            - capacity: 1
+              time: 2
+              unit: seconds
+debug: true
