@@ -4,6 +4,7 @@ import com.giffing.bucket4j.spring.boot.starter.config.cache.AsyncCacheResolver;
 import com.giffing.bucket4j.spring.boot.starter.config.webflux.Bucket4JAutoConfigurationWebfluxFilter;
 import io.github.bucket4j.AsyncBucket;
 import io.github.bucket4j.AsyncScheduledBucket;
+import io.github.bucket4j.AsyncVerboseBucket;
 import io.github.bucket4j.BlockingBucket;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.BucketConfiguration;
@@ -11,6 +12,8 @@ import io.github.bucket4j.BucketListener;
 import io.github.bucket4j.BucketState;
 import io.github.bucket4j.ConsumptionProbe;
 import io.github.bucket4j.EstimationProbe;
+import io.github.bucket4j.TokensInheritanceStrategy;
+import io.github.bucket4j.VerboseBucket;
 import io.github.bucket4j.grid.ProxyManager;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.context.annotation.Bean;
@@ -60,6 +63,11 @@ public class MockAsyncConfiguration {
 
     @Override
     public BlockingBucket asScheduler() {
+      return null;
+    }
+
+    @Override
+    public VerboseBucket asVerbose() {
       return null;
     }
 
@@ -114,12 +122,17 @@ public class MockAsyncConfiguration {
     }
 
     @Override
+    public void forceAddTokens(long tokensToAdd) {
+
+    }
+
+    @Override
     public long getAvailableTokens() {
       return 0;
     }
 
     @Override
-    public void replaceConfiguration(BucketConfiguration bucketConfiguration) {
+    public void replaceConfiguration(BucketConfiguration newConfiguration, TokensInheritanceStrategy tokensInheritanceStrategy) {
 
     }
 
@@ -135,6 +148,11 @@ public class MockAsyncConfiguration {
   }
 
   static class MockAsyncBucket implements AsyncBucket {
+
+    @Override
+    public AsyncVerboseBucket asVerbose() {
+      return null;
+    }
 
     @Override
     public CompletableFuture<Boolean> tryConsume(long l) {
@@ -173,7 +191,12 @@ public class MockAsyncConfiguration {
     }
 
     @Override
-    public CompletableFuture<Void> replaceConfiguration(BucketConfiguration bucketConfiguration) {
+    public CompletableFuture<Void> forceAddTokens(long tokensToAdd) {
+      return null;
+    }
+
+    @Override
+    public CompletableFuture<Void> replaceConfiguration(BucketConfiguration newConfiguration, TokensInheritanceStrategy tokensInheritanceStrategy) {
       return null;
     }
 
