@@ -9,3 +9,4 @@ bucket4j:
             - capacity: 1
               time: 2
               unit: seconds
+debug: true
